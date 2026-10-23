@@ -1,0 +1,95 @@
+/* Общий вид правовых страниц и документации (docs, privacy, terms, support): тот же язык, что у
+   лендинга, но проще — это текст для чтения, а не витрина. Стили держим отдельным файлом: страницы одинаковы,
+   и расхождение между ними выглядело бы как разные документы разных компаний. */
+:root {
+  --paper: #F2F4F6;
+  --surface: #FFFFFF;
+  --ink: #1A1F36;
+  --muted: #5A6078;
+  --line: #D9DDE5;
+  --accent: #2F45E8;
+  --radius-m: 14px;
+  --gutter: clamp(20px, 5vw, 56px);
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Schibsted Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.wrap { max-width: 760px; margin: 0 auto; padding: 0 var(--gutter); }
+
+header.top {
+  padding-block: 28px 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.brand { display: inline-flex; align-items: center; font-weight: 700; text-decoration: none; color: var(--ink); font-size: 1.05rem; }
+.brand img { width: 28px; height: 28px; margin-right: 8px; border-radius: 7px; background: #fff; }
+.brand span { color: var(--accent); }
+
+header.top nav { display: flex; gap: 18px; font-size: 0.925rem; }
+header.top nav a { color: var(--muted); text-decoration: none; }
+header.top nav a:hover, header.top nav a[aria-current='page'] { color: var(--ink); }
+
+main {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-m);
+  padding: clamp(24px, 5vw, 48px);
+  margin-block: 16px 40px;
+}
+
+h1 { font-size: clamp(1.7rem, 4vw, 2.3rem); line-height: 1.2; margin: 0 0 8px; }
+h2 { font-size: 1.2rem; margin: 32px 0 8px; }
+h3 { font-size: 1rem; margin: 20px 0 6px; }
+p, li { color: var(--ink); }
+.updated { color: var(--muted); font-size: 0.925rem; margin: 0 0 24px; }
+.lead { font-size: 1.075rem; }
+ul, ol { padding-left: 22px; }
+li { margin-bottom: 6px; }
+a { color: var(--accent); }
+code { background: var(--paper); border-radius: 4px; padding: 1px 5px; font-size: 0.9em; }
+
+table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 0.95rem; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { color: var(--muted); font-weight: 600; }
+
+.note {
+  background: var(--paper);
+  border-radius: var(--radius-m);
+  padding: 16px 18px;
+  margin: 20px 0;
+}
+
+footer {
+  padding-block: 8px 48px;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  color: var(--muted);
+  font-size: 0.925rem;
+}
+footer nav { display: flex; gap: 20px; }
+footer a { color: var(--muted); text-decoration: none; }
+footer a:hover { color: var(--ink); }
+
+@media (max-width: 600px) {
+  table, thead, tbody, th, td, tr { display: block; }
+  thead { display: none; }
+  td { border: none; padding: 2px 0; }
+  tr { border-bottom: 1px solid var(--line); padding: 10px 0; }
+  td::before { content: attr(data-label); display: block; color: var(--muted); font-size: 0.85rem; }
+}

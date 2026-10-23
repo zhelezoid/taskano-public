@@ -1,0 +1,19 @@
+# Контекст сборки: на сервере это может быть узкий каталог с нужными файлами, но локальный `docker build .` из корня репозитория этот
+# файл сокращает, иначе в контекст уедут node_modules, .git и локальные артефакты.
+node_modules
+dist
+coverage
+.git
+.env
+.env.*
+data
+logs
+*.db
+*.db-shm
+*.db-wal
+test
+plans
+specs
+docs
+skill
+.claude

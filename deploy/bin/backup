@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# deploy/bin/backup — дамп боевой Postgres через `docker compose exec`, хранение 14 дней
+# в /opt/taskano/backups/ и копия в /opt/backups/taskano/ (спека pilot-deploy). Запускается
+# из root crontab (deploy/crontab), 03:30 UTC ежедневно.
+#
+# Все пути переопределяемы env — для теста без реального compose-проекта.
+set -euo pipefail
+# Дамп содержит задачи и почты людей — читать может только root.
+umask 077
+export LC_ALL=C
+
+COMPOSE_DIR="${TASKANO_COMPOSE_DIR:-/opt/taskano}"
+BACKUP_DIR="${TASKANO_BACKUP_DIR:-$COMPOSE_DIR/backups}"
+OFFSITE_DIR="${TASKANO_OFFSITE_BACKUP_DIR:-/opt/backups/taskano}"
+RETENTION_DAYS="${TASKANO_BACKUP_RETENTION_DAYS:-14}"
+
+mkdir -p "$BACKUP_DIR" "$OFFSITE_DIR"
+
+stamp="$(date -u +%Y%m%d-%H%M)"
+file="taskano-${stamp}.dump"
+dest="$BACKUP_DIR/$file"
+
+cd "$COMPOSE_DIR"
+docker compose exec -T db pg_dump -Fc -U taskano_owner taskano > "$dest"
+
+cp "$dest" "$OFFSITE_DIR/$file"
+
+# Фото из рабочих групп (том taskano-media, спека group-intake) — архив рядом с дампом.
+media="taskano-media-${stamp}.tar.gz"
+docker compose exec -T worker tar czf - -C /data/media . > "$BACKUP_DIR/$media"
+cp "$BACKUP_DIR/$media" "$OFFSITE_DIR/$media"
+
+# Хранение 14 дней в обоих местах.
+find "$BACKUP_DIR" -maxdepth 1 -name 'taskano-*.dump' -mtime "+${RETENTION_DAYS}" -delete
+find "$OFFSITE_DIR" -maxdepth 1 -name 'taskano-*.dump' -mtime "+${RETENTION_DAYS}" -delete
+find "$BACKUP_DIR" "$OFFSITE_DIR" -maxdepth 1 -name 'taskano-media-*.tar.gz' -mtime "+${RETENTION_DAYS}" -delete
+
+echo "Бэкап готов: $dest"

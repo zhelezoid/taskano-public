@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Taskano — AI agents that manage the work</title>
+<meta name="description" content="Taskano connects your Claude agents to the people who do the work. Agents set tasks, follow up and check results. Each person gets one clear next step in Telegram, in their own language.">
+<meta property="og:title" content="Taskano — AI agents that manage the work">
+<meta property="og:description" content="Claude plans the work. Your team gets one clear next step, in their own language.">
+<meta property="og:url" content="https://taskano.app">
+<meta name="theme-color" content="#F2F4F6">
+<link rel="icon" type="image/png" href="/favicon.png?v=2">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2">
+<link rel="manifest" href="/site.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #F2F4F6;
+    --surface: #FFFFFF;
+    --ink: #1A1F36;
+    --muted: #5A6078;
+    --line: #D9DDE5;
+    --accent: #2F45E8;
+    --accent-ink: #FFFFFF;
+    --done: #0F8A5F;
+    --mark: #FFE36E;
+    --radius-s: 8px;
+    --radius-m: 14px;
+    --radius-l: 22px;
+    --gutter: clamp(20px, 5vw, 56px);
+    --measure: 36rem;
+    font-family: "Schibsted Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    color: var(--ink);
+    background: var(--paper);
+    -webkit-font-smoothing: antialiased;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); font-size: 1.0625rem; line-height: 1.55; }
+  a { color: inherit; }
+  :focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
+  .wrap { max-width: 1160px; margin: 0 auto; padding-inline: var(--gutter); }
+
+  /* Навигация */
+  .nav { display: flex; align-items: center; justify-content: space-between; padding-block: 22px; }
+  .brand { display: inline-flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.2rem; letter-spacing: -0.01em; text-decoration: none; }
+  .brand img { width: 32px; height: 32px; border-radius: 8px; background: #fff; }
+  .nav-links { display: flex; align-items: center; gap: 22px; font-size: 0.975rem; }
+  .nav-links a { text-decoration: none; color: var(--muted); }
+  .nav-links a:hover { color: var(--ink); }
+  .nav-links .gh { color: var(--ink); font-weight: 600; }
+
+  /* Кнопки */
+  .btn { display: inline-flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 22px; border-radius: 999px;
+    font: inherit; font-weight: 600; font-size: 1rem; text-decoration: none; border: 1.5px solid transparent; cursor: pointer; }
+  .btn-primary { background: var(--accent); color: var(--accent-ink); }
+  .btn-primary:hover { background: #2436D0; }
+  .btn-quiet { background: transparent; color: var(--ink); border-color: var(--line); }
+  .btn-quiet:hover { border-color: var(--ink); }
+  .btn svg { width: 18px; height: 18px; flex: none; }
+
+  /* Первый экран */
+  .hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(32px, 5vw, 72px);
+    align-items: center; padding-block: clamp(40px, 8vw, 104px) clamp(56px, 9vw, 120px); }
+  h1 { font-size: clamp(2.6rem, 5vw, 4.1rem); line-height: 1.02; letter-spacing: -0.035em; font-weight: 800; margin: 0 0 26px; max-width: 15ch; }
+  .lead { font-size: clamp(1.1rem, 1.6vw, 1.3rem); color: var(--muted); max-width: var(--measure); margin: 0 0 34px; line-height: 1.5; }
+  .actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+  .note { margin: 22px 0 0; font-size: 0.925rem; color: var(--muted); }
+
+  /* Карточка задачи — главный элемент страницы */
+  .phone { background: #DCE3EC; border-radius: var(--radius-l); padding: 18px; position: relative;
+    box-shadow: 0 1px 0 rgba(26,31,54,.04), 0 30px 60px -30px rgba(26,31,54,.35); }
+  .chat-head { display: flex; align-items: center; gap: 12px; padding: 4px 6px 16px; }
+  .avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--accent); display: grid; place-items: center; flex: none; }
+  .avatar img { width: 40px; height: 40px; border-radius: 50%; background: #fff; }
+  .chat-title { font-weight: 700; line-height: 1.2; }
+  .chat-sub { font-size: 0.85rem; color: var(--muted); }
+  .bubble { background: var(--surface); border-radius: 18px 18px 18px 6px; padding: 20px 22px 16px; }
+  .bubble h2 { font-size: 1.05rem; margin: 0 0 12px; font-weight: 700; letter-spacing: -0.01em; }
+  .field { margin: 0 0 10px; font-size: 0.975rem; line-height: 1.45; }
+  .field b { display: block; font-size: 0.8rem; font-weight: 600; color: var(--muted); margin-bottom: 1px; }
+  .field.done span { background: linear-gradient(transparent 55%, var(--mark) 55%); }
+  .time { text-align: right; font-size: 0.78rem; color: var(--muted); margin-top: 4px; }
+  .kb { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
+  .kb span { background: rgba(255,255,255,.7); border-radius: 10px; text-align: center; padding: 10px 6px; font-size: 0.9rem; font-weight: 600; color: var(--accent); }
+  .kb span:first-child { grid-column: 1 / -1; }
+  .langs { display: flex; gap: 6px; margin-top: 16px; flex-wrap: wrap; }
+  .langs button { font: inherit; font-size: 0.85rem; font-weight: 600; border: 0; border-radius: 999px; padding: 7px 13px;
+    background: rgba(255,255,255,.55); color: var(--muted); cursor: pointer; }
+  .langs button[aria-pressed="true"] { background: var(--ink); color: #fff; }
+  .swap { transition: opacity .28s ease; }
+  .swap.out { opacity: 0; }
+
+  /* Разделы */
+  section { padding-block: clamp(56px, 8vw, 104px); border-top: 1px solid var(--line); }
+  h2.section { font-size: clamp(1.9rem, 3.6vw, 2.9rem); line-height: 1.08; letter-spacing: -0.03em; font-weight: 800; margin: 0 0 18px; max-width: 18ch; }
+  .intro { color: var(--muted); max-width: var(--measure); margin: 0 0 48px; font-size: 1.1rem; }
+
+  /* Как это работает — настоящая последовательность, поэтому номера */
+  .steps { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; counter-reset: s; }
+  .steps li { counter-increment: s; padding: 26px 26px 0 0; border-top: 2px solid var(--ink); position: relative; }
+  .steps li + li { padding-left: 0; }
+  .steps li::before { content: counter(s); display: block; font-weight: 800; font-size: 2.4rem; line-height: 1; letter-spacing: -0.03em; color: var(--accent); margin-bottom: 18px; }
+  .steps h3 { font-size: 1.15rem; margin: 0 0 8px; letter-spacing: -0.01em; }
+  .steps p { margin: 0; color: var(--muted); font-size: 0.99rem; max-width: 28ch; }
+
+  /* Две колонки: текст + список */
+  .split { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: clamp(32px, 6vw, 96px); align-items: start; }
+  .points { margin: 0; padding: 0; list-style: none; }
+  .points li { padding: 22px 0; border-bottom: 1px solid var(--line); display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 14px; }
+  .points li:first-child { padding-top: 0; }
+  .points svg { width: 22px; height: 22px; margin-top: 3px; color: var(--accent); }
+  .points h3 { margin: 0 0 4px; font-size: 1.1rem; letter-spacing: -0.01em; }
+  .points p { margin: 0; color: var(--muted); }
+
+  /* Рабочие чаты: журнал того, что разложено по задачам */
+  .log { background: var(--surface); border-radius: var(--radius-m); border: 1px solid var(--line); overflow: hidden; }
+  .log-row { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 14px; padding: 16px 18px; align-items: center; }
+  .log-row + .log-row { border-top: 1px solid var(--line); }
+  .thumb { width: 52px; height: 52px; border-radius: 10px; background: repeating-linear-gradient(135deg, #C9D2DE 0 6px, #D6DDE7 6px 12px); }
+  .thumb.msg { background: var(--paper); display: grid; place-items: center; color: var(--muted); }
+  .thumb.msg svg { width: 22px; height: 22px; }
+  .log-what { font-size: 0.95rem; }
+  .log-where { font-size: 0.875rem; color: var(--muted); margin-top: 2px; }
+  .log-where strong { color: var(--done); font-weight: 600; }
+  .log-where em { font-style: normal; color: var(--accent); font-weight: 600; }
+
+  /* Финальный призыв */
+  .cta { background: var(--ink); color: #fff; border-radius: var(--radius-l); padding: clamp(36px, 6vw, 72px); display: grid;
+    grid-template-columns: minmax(0, 1.2fr) auto; gap: 32px; align-items: end; }
+  .cta h2 { font-size: clamp(1.9rem, 3.6vw, 2.9rem); line-height: 1.08; letter-spacing: -0.03em; font-weight: 800; margin: 0 0 14px; }
+  .cta p { margin: 0; color: #B9BFD3; max-width: 34rem; }
+  .cta .btn-quiet { color: #fff; border-color: rgba(255,255,255,.3); }
+  .cta .btn-quiet:hover { border-color: #fff; }
+  .cta .actions { justify-content: flex-end; }
+  .cta .start-steps { display: block; margin: 0 0 18px; padding-left: 1.3em; color: #fff; max-width: 38rem; list-style: decimal; }
+  .cta .start-steps li { margin: 0 0 10px; line-height: 1.5; }
+  .cta .start-steps code { background: rgba(255,255,255,.12); padding: 2px 6px; border-radius: 6px; font-size: .92em; overflow-wrap: anywhere; }
+  .last { border-top: 0; padding-top: 0; }
+
+  footer { padding-block: 36px 48px; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; color: var(--muted); font-size: 0.925rem; }
+  footer nav { display: flex; gap: 20px; }
+  footer a { text-decoration: none; }
+  footer a:hover { color: var(--ink); }
+
+  @media (max-width: 960px) {
+    .hero, .split { grid-template-columns: minmax(0, 1fr); }
+    .steps { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 40px; }
+    .cta { grid-template-columns: minmax(0, 1fr); }
+    .cta .actions { justify-content: flex-start; }
+  }
+  @media (max-width: 560px) {
+    .nav-links a:not(.gh) { display: none; }
+    .steps { grid-template-columns: minmax(0, 1fr); }
+    .steps li { padding-right: 0; }
+    .btn { width: 100%; justify-content: center; }
+    .phone { padding: 12px; }
+  }
+  @media (min-width: 961px) {
+    .phone { padding: 24px; }
+    .bubble { min-height: 23rem; }
+    .bubble h2 { font-size: 1.25rem; }
+    .field { font-size: 1.06rem; }
+    .field b { font-size: 0.85rem; }
+    .kb span { font-size: 0.975rem; padding: 12px 6px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .swap { transition: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="nav">
+    <a class="brand" href="/" aria-label="Taskano home">
+      <img src="/logo-96.png?v=2" width="32" height="32" alt="">
+      Taskano
+    </a>
+    <nav class="nav-links" aria-label="Main">
+      <a href="#how">How it works</a>
+      <a href="#chats">Work chats</a>
+      <a href="#mcp">MCP</a>
+      <a href="/docs">Docs</a>
+      <a class="gh" href="https://github.com/example-org/taskano-skill">GitHub</a>
+    </nav>
+  </header>
+
+  <main>
+    <div class="hero">
+      <div>
+        <h1>Claude plans the work. Your team gets one clear next step.</h1>
+        <p class="lead">Taskano connects your Claude agents to the people who do the work. Agents set tasks, follow up and check results. Each person gets one task at a time in Telegram, in their own language.</p>
+        <div class="actions">
+          <a class="btn btn-primary" href="#start">Connect to Claude</a>
+          <a class="btn btn-quiet" href="https://github.com/example-org/taskano-skill">Get the Claude skill</a>
+        </div>
+        <p class="note">Open to everyone and free during early access: no invitation, no card. The people you invite receive their tasks in Telegram.</p>
+      </div>
+
+      <div class="phone" aria-label="Example task message in Telegram">
+        <div class="chat-head">
+          <div class="avatar"><img src="/logo-96.png?v=2" width="40" height="40" alt=""></div>
+          <div><div class="chat-title">Taskano</div><div class="chat-sub" data-t="sub">bot</div></div>
+        </div>
+        <div class="bubble swap" id="card" aria-live="polite">
+          <h2 data-t="title">Next step for Anna</h2>
+          <p class="field"><b data-t="l_task">Task</b><span data-t="task">Photograph the shelf with item 4471 and count the units.</span></p>
+          <p class="field"><b data-t="l_why">Why</b><span data-t="why">The marketplace shows 12 in stock. The warehouse sheet says 3.</span></p>
+          <p class="field done"><b data-t="l_done">Done when</b><span data-t="done">A photo of the shelf and the real count.</span></p>
+          <p class="field"><b data-t="l_due">Due</b><span data-t="due">Today, 5 pm</span></p>
+          <div class="time">14:02</div>
+        </div>
+        <div class="kb swap" id="kb"><span data-t="b1">I'm on it</span><span data-t="b2">Ask a question</span><span data-t="b3">Can't do it</span></div>
+        <div class="langs" role="group" aria-label="Show this task in another language">
+          <button type="button" data-lang="en" aria-pressed="true">English</button>
+          <button type="button" data-lang="tr" aria-pressed="false">Türkçe</button>
+          <button type="button" data-lang="vi" aria-pressed="false">Tiếng Việt</button>
+          <button type="button" data-lang="ru" aria-pressed="false">Русский</button>
+        </div>
+      </div>
+    </div>
+
+    <section id="how">
+      <h2 class="section">From one conversation to a working team</h2>
+      <p class="intro">You talk to Claude. Taskano keeps the facts: people, tasks, plans, what is waiting on whom. The agents do the managing.</p>
+      <ol class="steps">
+        <li><h3>Describe your company</h3><p>Tell Claude who works with you and what each area needs. People, agents and working hours are set up from the conversation.</p></li>
+        <li><h3>Agents lead each area</h3><p>Purchasing, marketplaces, the warehouse. Each agent owns a plan, breaks it into steps and assigns them.</p></li>
+        <li><h3>People work in Telegram</h3><p>One task at a time, with the reason and what counts as done. Questions go straight to the agent.</p></li>
+        <li><h3>The doer names the date</h3><p>Ask a person to set the due date themselves. They pick it in a calendar, and you see who committed to what and when. No answer in a working day, and they get a reminder; two, and you hear about it.</p></li>
+      </ol>
+    </section>
+
+    <section>
+      <div class="split">
+        <div>
+          <h2 class="section">Simple for the people doing the work</h2>
+          <p class="intro">No boards to learn and no backlog to scroll. The bot shows what to do now and why it matters.</p>
+        </div>
+        <ul class="points">
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h9M8.5 3v2M6 5c.5 3 2.5 5.5 5 7M11 5c-.8 3.5-3.2 6.5-7 8"/><path d="M13 21l4-9 4 9M14.5 18h5"/></svg>
+            <div><h3>In their own language</h3><p>Tasks, reminders and answers are translated for each person. English, Russian, Turkish and Vietnamese today.</p></div>
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></svg>
+            <div><h3>One thing at a time</h3><p>Each task says what to do, why, and what counts as done. Photos and results go back with one tap.</p></div>
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2.5" width="12" height="19" rx="3"/><path d="M11 18.5h2"/></svg>
+            <div><h3>Nothing to install</h3><p>A Telegram bot and a small app inside Telegram. Reminders follow each person's working hours.</p></div>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <div class="split">
+        <div>
+          <h2 class="section">You stay in charge</h2>
+          <p class="intro">Agents handle the routine and tell you what they did. Anything that matters waits for your decision.</p>
+        </div>
+        <ul class="points">
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 8v4l3 2"/></svg>
+            <div><h3>24 hours to undo</h3><p>When an agent changes something on its own, you get a line with an Undo button.</p></div>
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H8l-4 3z"/><path d="M9 10.5h6"/></svg>
+            <div><h3>Proposals for the big calls</h3><p>Money, new people, closing a task someone set: the agent proposes, you accept or decline.</p></div>
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v18M16.5 7.5c0-1.7-2-3-4.5-3s-4.5 1.3-4.5 3 1.5 2.6 4.5 3.2 4.5 1.6 4.5 3.4-2 3.4-4.5 3.4-4.5-1.3-4.5-3"/></svg>
+            <div><h3>A spending limit</h3><p>Each company has a monthly AI budget. When it runs out, translation and chat analysis pause until you raise it.</p></div>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="chats">
+      <div class="split">
+        <div>
+          <h2 class="section">Work chats, filed automatically</h2>
+          <p class="intro">Add Taskano to a team chat and make it an admin. It stays quiet, reads photos and messages from your team, and files them under the right task. When someone writes that it's done, it asks them to confirm. Messages that match no task are deleted after 30 days.</p>
+        </div>
+        <div class="log" aria-label="Example of messages filed to tasks">
+          <div class="log-row"><div class="thumb" aria-hidden="true"></div>
+            <div><div class="log-what">Photo of shelf B4 from Anna</div><div class="log-where">Attached to <em>#214 Recount item 4471</em></div></div></div>
+          <div class="log-row"><div class="thumb msg" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H8l-4 3z"/></svg></div>
+            <div><div class="log-what">"Supplier moved the delivery to Thursday"</div><div class="log-where">Noted on <em>#198 Restock for October</em></div></div></div>
+          <div class="log-row"><div class="thumb msg" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></svg></div>
+            <div><div class="log-what">"Counted, it's 3 units"</div><div class="log-where"><strong>Asked Anna to mark #214 done</strong></div></div></div>
+          <div class="log-row"><div class="thumb msg" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></div>
+            <div><div class="log-what">"Mark, please send the samples by Friday"</div><div class="log-where">New task for Mark, yours to undo for 24 hours</div></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="mcp">
+      <div class="split">
+        <div>
+          <h2 class="section">Connect from Claude and other MCP clients</h2>
+          <p class="intro">Taskano is a remote MCP server. One address works everywhere, and sign-in opens in your browser: with Google, or with a one-time code from your email.</p>
+          <p class="intro"><code>https://taskano.app/mcp</code></p>
+        </div>
+        <div class="log" aria-label="Where to add the Taskano connector">
+          <div class="log-row"><div class="thumb msg" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div>
+            <div><div class="log-what">Claude on the web, desktop and mobile</div><div class="log-where">Settings → Connectors → Add custom connector, paste the address. Added once, it works in all of them.</div></div></div>
+          <div class="log-row"><div class="thumb msg" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17l6-5-6-5M12 19h8"/></svg></div>
+            <div><div class="log-what">Claude Code</div><div class="log-where"><code>claude mcp add --transport http taskano https://taskano.app/mcp</code>, then <code>/mcp</code> to sign in.</div></div></div>
+          <div class="log-row"><div class="thumb msg" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg></div>
+            <div><div class="log-what">Other MCP clients</div><div class="log-where">Streamable HTTP with OAuth 2.1 and dynamic client registration — the same address.</div></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="last" id="start">
+      <div class="cta">
+        <div>
+          <h2>Start in three steps</h2>
+          <ol class="start-steps">
+            <li>In Claude open <strong>Settings → Connectors → Add custom connector</strong> and paste <code>https://taskano.app/mcp</code></li>
+            <li>Sign in with Google, or with a one-time code sent to your email. No password.</li>
+            <li>Tell Claude <em>“Set up my company in Taskano”</em> — Claude creates it and helps you set the language, the time zone and invite your people.</li>
+          </ol>
+          <p>Open to everyone, free during early access. The skill teaches Claude to set tasks well; the connector works without it.</p>
+        </div>
+        <div class="actions">
+          <a class="btn btn-primary" href="/docs#setup">Setup guide</a>
+          <a class="btn btn-quiet" href="https://github.com/example-org/taskano-skill">Get the Claude skill</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <span>© 2026 Taskano</span>
+    <nav aria-label="Footer">
+      <a href="/docs">Docs</a>
+      <a href="/privacy">Privacy</a>
+      <a href="/terms">Terms</a>
+      <a href="/support">Support</a>
+      <a href="https://github.com/example-org/taskano-skill">GitHub</a>
+      <a href="https://t.me/Taskano_bot">Telegram</a>
+    </nav>
+  </footer>
+</div>
+
+<script>
+  // Одна и та же задача на языке каждого человека — единственная анимация на странице.
+  const T = {
+    en: { sub: 'bot', title: 'Next step for Anna', l_task: 'Task', l_why: 'Why', l_done: 'Done when', l_due: 'Due',
+      task: 'Photograph the shelf with item 4471 and count the units.', why: 'The marketplace shows 12 in stock. The warehouse sheet says 3.',
+      done: 'A photo of the shelf and the real count.', due: 'Today, 5 pm', b1: "I'm on it", b2: 'Ask a question', b3: "Can't do it" },
+    tr: { sub: 'bot', title: 'Aylin için sıradaki adım', l_task: 'Görev', l_why: 'Neden', l_done: 'Tamamlanma ölçütü', l_due: 'Son tarih',
+      task: '4471 kodlu ürünün rafını fotoğrafla ve adetleri say.', why: 'Pazaryerinde stok 12 görünüyor. Depo listesinde 3 yazıyor.',
+      done: 'Rafın fotoğrafı ve gerçek adet.', due: 'Bugün, 17:00', b1: 'Üstleniyorum', b2: 'Soru sor', b3: 'Yapamıyorum' },
+    vi: { sub: 'bot', title: 'Bước tiếp theo cho Linh', l_task: 'Nhiệm vụ', l_why: 'Lý do', l_done: 'Hoàn thành khi', l_due: 'Hạn',
+      task: 'Chụp ảnh kệ hàng có mã 4471 và đếm số lượng.', why: 'Sàn thương mại hiển thị còn 12. Sổ kho ghi 3.',
+      done: 'Có ảnh kệ hàng và số lượng thực tế.', due: 'Hôm nay, 17:00', b1: 'Nhận việc', b2: 'Đặt câu hỏi', b3: 'Không làm được' },
+    ru: { sub: 'бот', title: 'Следующий шаг для Ани', l_task: 'Задача', l_why: 'Зачем', l_done: 'Готово, когда', l_due: 'Срок',
+      task: 'Сфотографируй полку с артикулом 4471 и пересчитай штуки.', why: 'На маркетплейсе в наличии 12. В складской таблице — 3.',
+      done: 'Есть фото полки и реальное количество.', due: 'Сегодня, 17:00', b1: 'Беру', b2: 'Задать вопрос', b3: 'Не могу' },
+  };
+  const order = ['en', 'tr', 'vi', 'ru'];
+  const swaps = document.querySelectorAll('.swap');
+  const buttons = document.querySelectorAll('.langs button');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let current = 'en', timer = null;
+
+  function apply(lang) {
+    const d = T[lang];
+    document.querySelectorAll('[data-t]').forEach((el) => { el.textContent = d[el.dataset.t]; });
+    buttons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.lang === lang)));
+    document.getElementById('card').lang = lang;
+    current = lang;
+  }
+  function show(lang) {
+    if (lang === current) return;
+    if (reduce) { apply(lang); return; }
+    swaps.forEach((s) => s.classList.add('out'));
+    setTimeout(() => { apply(lang); swaps.forEach((s) => s.classList.remove('out')); }, 280);
+  }
+  function start() { if (!reduce && !timer) timer = setInterval(() => show(order[(order.indexOf(current) + 1) % order.length]), 3600); }
+  function stop() { clearInterval(timer); timer = null; }
+  buttons.forEach((b) => b.addEventListener('click', () => { stop(); show(b.dataset.lang); }));
+  const phone = document.querySelector('.phone');
+  phone.addEventListener('mouseenter', stop);
+  phone.addEventListener('mouseleave', start);
+  start();
+</script>
+</body>
+</html>

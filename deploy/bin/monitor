@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+# deploy/bin/monitor — внешний присмотр за /health раз в 5 минут (deploy/crontab). Считает
+# провалы подряд в /opt/taskano/logs/monitor.state; два провала подряд → сообщение владельцу
+# через Bot API тестового бота, один раз, до восстановления (спека pilot-deploy).
+set -euo pipefail
+export LC_ALL=C
+
+COMPOSE_DIR="${TASKANO_COMPOSE_DIR:-/opt/taskano}"
+LOG_DIR="${TASKANO_LOG_DIR:-$COMPOSE_DIR/logs}"
+STATE_FILE="${TASKANO_MONITOR_STATE:-$LOG_DIR/monitor.state}"
+LOG_FILE="$LOG_DIR/monitor.log"
+ENV_FILE="${TASKANO_ENV_FILE:-$COMPOSE_DIR/.env}"
+PUBLIC_URL="${PUBLIC_URL:-}"
+
+mkdir -p "$LOG_DIR"
+
+log() { echo "[$(date -u +%FT%TZ)] $*" >> "$LOG_FILE"; }
+
+if [[ -z "$PUBLIC_URL" && -f "$ENV_FILE" ]]; then
+  PUBLIC_URL="$(grep -E '^PUBLIC_URL=' "$ENV_FILE" 2>/dev/null | tail -n1 | cut -d= -f2-)"
+fi
+if [[ -z "$PUBLIC_URL" ]]; then
+  log "PUBLIC_URL не задан, проверка пропущена"
+  exit 0
+fi
+
+# Не печатает значения токенов никуда — только читает их из .env для запроса к Bot API.
+notify_owner() {
+  local text="$1"
+  [[ -f "$ENV_FILE" ]] || return 0
+  local token chat_id
+  token="$(grep -E '^TELEGRAM_TEST_BOT_TOKEN=' "$ENV_FILE" 2>/dev/null | tail -n1 | cut -d= -f2-)"
+  chat_id="$(grep -E '^OWNER_TELEGRAM_CHAT_ID=' "$ENV_FILE" 2>/dev/null | tail -n1 | cut -d= -f2-)"
+  if [[ -z "$token" || -z "$chat_id" ]]; then
+    log "TELEGRAM_TEST_BOT_TOKEN/OWNER_TELEGRAM_CHAT_ID не заданы, сообщение не отправлено"
+    return 0
+  fi
+  curl -fsS -X POST "https://api.telegram.org/bot${token}/sendMessage" \
+    -d chat_id="${chat_id}" \
+    --data-urlencode text="${text}" \
+    >/dev/null 2>&1 || log "не удалось отправить сообщение владельцу"
+}
+
+failures="0"
+[[ -f "$STATE_FILE" ]] && failures="$(cat "$STATE_FILE")"
+[[ "$failures" =~ ^[0-9]+$ ]] || failures="0"
+
+if curl -fsS --max-time 10 "${PUBLIC_URL%/}/health" >/dev/null 2>&1; then
+  if [[ "$failures" -ge 2 ]]; then
+    notify_owner "Taskano снова отвечает"
+    log "восстановился после $failures провалов подряд"
+  fi
+  echo 0 > "$STATE_FILE"
+else
+  failures=$((failures + 1))
+  echo "$failures" > "$STATE_FILE"
+  log "провал #$failures"
+  if [[ "$failures" -eq 2 ]]; then
+    notify_owner "Taskano не отвечает на /health (2 провала подряд)"
+  fi
+fi

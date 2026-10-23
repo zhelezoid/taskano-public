@@ -1,0 +1,1072 @@
+/* Вид — нативные сгруппированные списки Telegram (как «Настройки»). Цвета приходят из themeParams
+   (App.tsx → applyTheme); здесь — запасные значения для светлой и тёмной темы вне Telegram. */
+:root {
+  --bg: #ffffff;
+  --bg-grouped: #efeff4;
+  --bg-section: #ffffff;
+  --text: #000000;
+  --hint: #8e8e93;
+  --subtitle: #6d6d72;
+  --section-header: #6d6d72;
+  --accent: #2481cc;
+  --link: #2481cc;
+  --button: #2481cc;
+  --button-text: #ffffff;
+  --destructive: #ff3b30;
+  --separator: rgba(60, 60, 67, 0.18);
+  --warm: #c2410c;
+  /* Единая шкала. До неё радиусы шли вразнобой (6, 8, 10, 12, 14, 16, 18), а отступы — двенадцатью
+     разными числами: вид расползался, и каждый новый элемент добавлял в эту россыпь своё. */
+  --r-s: 8px;
+  --r-m: 12px;
+  --r-l: 16px;
+  --radius: var(--r-l);
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  /* Панель Telegram поверх приложения (App.tsx → applyInsets); вне Telegram — вырез экрана. */
+  --inset-top: env(safe-area-inset-top, 0px);
+  --inset-bottom: env(safe-area-inset-bottom, 0px);
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-scheme='light']) {
+    --bg: #1c1c1e; --bg-grouped: #000000; --bg-section: #1c1c1e; --text: #ffffff; --hint: #8e8e93;
+    --subtitle: #98989f; --section-header: #8d8d93; --separator: rgba(84, 84, 88, 0.6); --warm: #fb923c;
+    color-scheme: dark;
+  }
+}
+:root[data-scheme='dark'] { --warm: #fb923c; color-scheme: dark; }
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg-grouped);
+  color: var(--text);
+  font: 16px/1.35 -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  /* Текст выделяется по умолчанию: контакт или ссылку из дела нужно уметь скопировать. Выделение
+     отключено только у нажимаемого (правило ниже), иначе долгое нажатие спорит с тапом. */
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+button:disabled { cursor: default; }
+
+/* Нажимаемое не выделяется. Строки списка, заголовки разделов, вкладки и «Назад» — это <button>, их
+   текст наследует запрет. Заслон объявлений целиком, кроме .announcement-text, тоже без выделения. */
+button, [role='button'], [role='tab'], .segmented, .grip, .date-picker, input[type='checkbox'],
+.announcement-check, .announcement-gate {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+#app { min-height: 100vh; }
+
+.screen {
+  padding: calc(12px + var(--inset-top)) 16px calc(28px + var(--inset-bottom));
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.banner {
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--bg-section);
+  color: var(--subtitle);
+  font-size: 14px;
+  text-align: center;
+}
+
+/* ── Переключатель пространств ─────────────────────────────────────────── */
+.segmented {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  margin-bottom: var(--space-4);
+  border-radius: var(--r-m);
+  background: color-mix(in srgb, var(--hint) 22%, transparent);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.segmented::-webkit-scrollbar { display: none; }
+
+.segment {
+  flex: 1 0 auto;
+  min-width: 0;
+  padding: 6px 12px;
+  border-radius: var(--r-s);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  transition: background 0.15s ease;
+}
+.segment.active {
+  background: var(--bg-section);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  font-weight: 600;
+}
+
+/* ── Карточка «Сейчас» ─────────────────────────────────────────────────── */
+.now-card {
+  padding: var(--space-4);
+  margin-bottom: var(--space-5);
+  border-radius: var(--r-l);
+  background: var(--bg-section);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* Название «Сейчас» открывает карточку дела — поэтому кнопка, а не заголовок. */
+.now-title {
+  display: block;
+  width: 100%;
+  font-size: 21px;
+  line-height: 1.25;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.now-title:active { opacity: 0.6; }
+/* «Подробнее» у взятого дела: кнопка-ссылка под сроком, не теряется среди действий. */
+.now-more { display: block; margin-top: 10px; padding: 0; text-align: left; }
+
+.now-why {
+  margin-top: 8px;
+  color: var(--subtitle);
+  font-size: 15px;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.now-why-label { color: var(--hint); }
+
+.now-meta { margin-top: 10px; }
+
+/* Кнопки в ряд по содержимому, а не во всю ширину: «Завершить» — такое же действие, как остальные,
+   и растянутая кнопка объявляла бы его единственно правильным. */
+.now-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+/* Компактнее прежнего: кнопок на карточке до шести, и кнопка в 44 px съедала экран телефона.
+   36 px с запасом проходят по минимальной цели нажатия в мобильных рекомендациях. */
+.btn {
+  height: 36px;
+  padding: 0 var(--space-3);
+  border-radius: var(--r-m);
+  font-size: 15px;
+  font-weight: 600;
+  transition: transform 0.08s ease, opacity 0.15s ease;
+}
+.btn:active:not(:disabled) { transform: scale(0.97); }
+.btn:disabled { opacity: 0.45; }
+.btn.primary { background: var(--button); color: var(--button-text); }
+.btn.tinted { background: color-mix(in srgb, var(--button) 13%, transparent); color: var(--button); }
+.btn.tinted.danger { background: color-mix(in srgb, var(--destructive) 12%, transparent); color: var(--destructive); }
+
+/* Строка режима над полем: чем станет отправленный текст (спека miniapp-task-actions). */
+.composer-mode {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+  color: var(--subtitle);
+  font-size: 13px;
+}
+
+/* Что пошло не так с действием: строка над кнопками, гаснет при следующем действии. */
+.task-error {
+  margin-top: 12px;
+  color: var(--destructive);
+  font-size: 14px;
+}
+
+/* Пустой раздел: «открытых дел нет» вместо голого заголовка. */
+.group-empty {
+  padding: 12px 16px;
+  color: var(--subtitle);
+  font-size: 15px;
+}
+
+/* Доски: фильтр списка (спека projects-stage2). Прокручивается вбок, если досок много. */
+.projects {
+  display: flex;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-3);
+  padding-bottom: 2px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.projects::-webkit-scrollbar { display: none; }
+.project-chip {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--bg-section);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.project-chip.on { background: var(--button); color: var(--button-text); }
+.project-count { opacity: 0.6; font-size: 13px; }
+
+/* Новое в деле (спека unread-and-deeplink): точка цвета ссылки темы Telegram перед номером дела и
+   на чипе человека. По центру строки заголовка — выравнивание по середине строчных букв. */
+.unread-dot {
+  display: inline-block;
+  flex: none;
+  width: 8px;
+  height: 8px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: var(--link);
+  vertical-align: middle;
+}
+.project-chip .unread-dot { margin-right: 0; }
+.project-chip.on .unread-dot { background: var(--button-text); }
+
+/* Обозначение дела в строке списка: перед названием, приглушённое. */
+.row-key {
+  margin-right: 6px;
+  color: var(--hint);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+/* Обозначение дела внутри доски: «NOR-001» (спека projects-stage2). */
+.task-key {
+  margin-bottom: 4px;
+  color: var(--hint);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+/* Когда дело было поставлено — метаданные, мелким шрифтом под действиями. */
+.task-created {
+  margin-top: 14px;
+  color: var(--hint);
+  font-size: 12px;
+}
+
+/* Поле реплики (спека task-comments): как в мессенджере — растущее поле и маленькая кнопка отправки. */
+.comment-box { margin-top: 12px; }
+.comment-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: 8px;
+}
+.comment-input {
+  min-height: 44px;
+  max-height: 132px;
+  padding: 11px 14px;
+  border-radius: 18px;
+  border: 1px solid var(--separator);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 16px;
+  line-height: 1.35;
+  min-width: 0;
+  resize: none;
+  overflow-y: auto;
+}
+.comment-input::placeholder { color: var(--hint); }
+.comment-input:disabled { opacity: 0.45; }
+.comment-send {
+  width: 36px;
+  height: 36px;
+  margin-bottom: 4px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--button);
+  color: var(--button-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: opacity 0.12s ease, transform 0.12s ease;
+}
+.comment-send:active:not(:disabled) { transform: scale(0.94); }
+.comment-send:disabled { opacity: 0.35; cursor: default; }
+.comment-hint { margin-top: 8px; color: var(--subtitle); font-size: 14px; }
+
+/* Поле обязательного результата (спека required-result): то же поле, что у реплики, но на всю ширину блока. */
+.result-input { display: block; width: 100%; box-sizing: border-box; margin-top: 6px; }
+
+.now-card.empty { text-align: left; }
+.now-empty-title { font-size: 19px; font-weight: 600; }
+.now-empty-hint { margin-top: 6px; color: var(--subtitle); font-size: 15px; }
+
+/* ── Разделы ───────────────────────────────────────────────────────────── */
+.group { margin-bottom: var(--space-5); }
+
+.group-header {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: 0 0 var(--space-2) var(--space-4);
+  color: var(--section-header);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-transform: uppercase;
+}
+.count { color: var(--hint); font-weight: 400; }
+
+.group-body {
+  border-radius: var(--radius);
+  background: var(--bg-section);
+  overflow: hidden;
+}
+
+/* Заголовок проекта внутри раздела: список разложен по проектам (спека projects). */
+.project-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px 4px;
+  color: var(--hint);
+  font-size: 13px;
+}
+.project-line + .row::before { display: none; }
+.lock { flex: none; color: var(--hint); }
+
+.row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 48px;
+  padding: 11px 16px;
+  text-align: left;
+  transition: background 0.12s ease, opacity 0.3s ease;
+}
+/* Дело, из которого только что вернулись (App.tsx → highlight). */
+:root { --returned: color-mix(in srgb, var(--accent) 16%, transparent); }
+button.row:active { background: color-mix(in srgb, var(--hint) 16%, transparent); }
+
+/* Разделитель — от текста, как в iOS/Telegram, а не на всю ширину. */
+.row + .row::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 16px;
+  height: 1px;
+  transform: scaleY(0.5);
+  background: var(--separator);
+}
+.row.personal + .row.personal::before { left: 52px; }
+
+.row-body { flex: 1; min-width: 0; }
+.row-title {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow-wrap: anywhere;
+}
+.row-meta { display: flex; align-items: center; gap: 8px; margin-top: 3px; }
+
+.chevron { flex: none; color: color-mix(in srgb, var(--hint) 70%, transparent); }
+
+.due { color: var(--subtitle); font-size: 14px; }
+.due.soon { color: var(--accent); }
+.due.past { color: var(--warm); }
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 7px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--warm) 14%, transparent);
+  color: var(--warm);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.tag.muted { background: color-mix(in srgb, var(--hint) 16%, transparent); color: var(--subtitle); font-weight: 500; }
+
+/* ── Личное ────────────────────────────────────────────────────────────── */
+.check {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1.5px solid color-mix(in srgb, var(--hint) 75%, transparent);
+  color: transparent;
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+.check.checked { background: var(--button); border-color: var(--button); color: var(--button-text); }
+
+.row.is-done .row-title { color: var(--hint); text-decoration: line-through; }
+.row.is-done { opacity: 0.55; }
+
+.icon-btn {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  margin-right: -6px;
+  border-radius: 50%;
+  color: var(--hint);
+}
+.icon-btn:active:not(:disabled) { background: color-mix(in srgb, var(--destructive) 12%, transparent); color: var(--destructive); }
+.icon-btn:disabled { opacity: 0.4; }
+
+.grip {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 32px;
+  margin-right: -8px;
+  color: color-mix(in srgb, var(--hint) 70%, transparent);
+  touch-action: none;
+  cursor: grab;
+}
+
+.empty-state {
+  padding: 48px 24px;
+  text-align: center;
+}
+.empty-title { font-size: 19px; font-weight: 600; }
+.empty-hint { margin-top: 6px; color: var(--subtitle); font-size: 15px; }
+
+/* ── Служебные экраны ─────────────────────────────────────────────────── */
+.center-screen {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  text-align: center;
+  color: var(--subtitle);
+}
+
+.spinner {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2.5px solid color-mix(in srgb, var(--hint) 30%, transparent);
+  border-top-color: var(--button);
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation-duration: 0s !important; }
+}
+
+/* ── Личное: виды и важность ─────────────────────────────── */
+:root { --star: #f5a623; }
+
+.row-open { display: block; text-align: left; padding: 2px 0; }
+.row-open:active .row-title { opacity: 0.6; }
+
+.meta-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--subtitle);
+  font-size: 14px;
+}
+.nowrap { flex: none; white-space: nowrap; }
+.nowrap + .meta-text { flex: 1; }
+.nowrap + .meta-text::before { content: '· '; color: var(--hint); }
+
+/* Пометка «рабочее» у личного дела (спека owner-feedback): название компании, нажатие — снять. */
+.shared-chip {
+  flex: none;
+  max-width: 35%;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--link) 12%, transparent);
+  color: var(--link);
+  font-size: 12px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.shared-chip:disabled { opacity: 0.5; }
+
+.star { color: color-mix(in srgb, var(--hint) 70%, transparent); }
+.star.on { color: var(--star); }
+.star:active:not(:disabled) { background: color-mix(in srgb, var(--star) 14%, transparent); color: var(--star); }
+
+.group.important .group-header { color: var(--text); font-weight: 600; }
+.star-mark { color: var(--star); font-size: 14px; }
+
+.header-link {
+  margin-left: auto;
+  margin-right: 16px;
+  color: var(--link);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+/* Материалы дела (спека task-context): на карточке — развёрнутым списком; название источника,
+   у внешнего статус из слепка, ниже цитата-основание. */
+.row-sources { padding: 14px 0 0; }
+
+.sources-label { color: var(--hint); font-size: 13px; }
+
+.source-list {
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+  color: var(--subtitle);
+}
+.source-list li { padding: 3px 0; }
+.source-line { display: flex; gap: 8px; align-items: baseline; }
+.source-link { color: var(--link); text-align: left; overflow-wrap: anywhere; }
+.source-status { color: var(--hint); white-space: nowrap; }
+.source-quote {
+  margin: 2px 0 0;
+  padding-left: 10px;
+  border-left: 2px solid var(--separator);
+  color: var(--hint);
+  overflow-wrap: anywhere;
+}
+
+/* ── Карточка дела (спека miniapp-task-card) ──────────────────────────── */
+.task-card {
+  padding: 18px;
+  border-radius: var(--radius);
+  background: var(--bg-section);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.task-state {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.task-title {
+  font-size: 21px;
+  line-height: 1.25;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
+
+.task-meta {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.task-block { margin-top: 16px; }
+.task-block-label { color: var(--hint); font-size: 13px; }
+/* Заголовок раздела отделён от текста заметно, иначе разделы сливаются в одну простыню. */
+.task-block-text {
+  margin-top: 4px;
+  font-size: 15px;
+  overflow-wrap: anywhere;
+}
+
+/* Текст дела написан человеком или агентом как обычный текст: абзацы пустой строкой, перечисления
+   маркерами, ссылки адресом. Раньше всё это выводилось одной простынёй (см. rich-text.ts). */
+.rich-p { margin: 0; }
+.rich-p + .rich-p,
+.rich-p + .rich-list,
+.rich-list + .rich-p,
+.rich-list + .rich-list { margin-top: 8px; }
+.rich-list {
+  margin: 0;
+  padding-left: 20px;
+}
+.rich-list li + li { margin-top: 4px; }
+/* Длинный текст читается хуже вплотную: строки в нём разрежены сильнее, чем в короткой подписи. */
+.task-block-long .rich-p,
+.task-block-long .rich-list { line-height: 1.5; }
+/* Ссылка в тексте — кнопка (открывается браузером Telegram), но выглядеть и переноситься должна
+   как ссылка: строчным элементом, иначе длинный адрес целиком спрыгивает на новую строку. */
+.text-link {
+  display: inline;
+  color: var(--link);
+  text-decoration: underline;
+  overflow-wrap: anywhere;
+  text-align: left;
+  font: inherit;
+}
+
+/* Фото дела (спека task-photos): ряд миниатюр с прокруткой вбок, нажатие — во весь экран. */
+.photo-row {
+  display: flex;
+  gap: var(--space-2);
+  margin: var(--space-2) 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.photo-thumb {
+  flex: 0 0 auto;
+  width: 72px;
+  height: 72px;
+  padding: 0;
+  border-radius: var(--r-s);
+  overflow: hidden;
+  background: var(--bg-grouped);
+}
+.photo-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.photo-viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.92);
+}
+.photo-viewer { touch-action: none; overflow: hidden; user-select: none; -webkit-user-select: none; }
+.photo-viewer img {
+  max-width: 100%; max-height: 100%; object-fit: contain;
+  transform-origin: center center; will-change: transform; -webkit-user-drag: none; pointer-events: none;
+}
+.photo-close {
+  position: absolute; top: calc(env(safe-area-inset-top, 0px) + 12px); right: 12px;
+  width: 40px; height: 40px; border-radius: 20px;
+  background: rgba(255, 255, 255, 0.18); color: #fff; font-size: 26px; line-height: 40px; text-align: center;
+}
+/* Поле выбора файла открывается своей кнопкой; display:none на части клиентов не даёт открыть выбор. */
+.file-input-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+.link-btn { color: var(--link); font-size: 14px; }
+.link-btn:disabled { color: var(--hint); }
+
+.task-personal {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.task-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+/* По содержимому, а не в растяжку: растянутая кнопка в последнем ряду выглядела главной, хотя все
+   действия здесь равны. */
+.task-actions .btn { flex: 0 0 auto; }
+
+.task-hint { margin-top: 8px; color: var(--hint); font-size: 13px; }
+
+.empty-state .retry { margin-top: 16px; }
+
+/* Возврат к списку, когда у клиента нет системной кнопки «Назад». */
+.back-link {
+  align-self: flex-start;
+  margin: 0 0 4px;
+  padding: 8px 0;
+  background: none;
+  border: 0;
+  color: var(--link);
+  font: inherit;
+  cursor: pointer;
+}
+
+/* Записи по делу: реплики человека и ответы агента. */
+.note-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.note {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--bg-grouped);
+}
+.note.mine { background: var(--bg-section); border: 1px solid var(--separator); }
+.note-author { font-size: 12px; color: var(--hint); margin-bottom: 2px; }
+.note-time { white-space: nowrap; }
+.note-kind { font-size: 12px; font-weight: 600; margin-bottom: 2px; display: flex; gap: 6px; align-items: center; }
+.note-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* Раздел «Компания» (спека miniapp-company): управление глазами — люди, доски, агенты. */
+.company-link {
+  display: block;
+  width: 100%;
+  margin: 0 0 var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: none;
+  border-radius: var(--r-m);
+  background: var(--bg-section);
+  color: var(--link);
+  /* Сокращённое `font` идёт первым: поставленное после, оно затирало размер, и кнопка оставалась
+     в 16 px, хотя рядом стояли кнопки в 15. */
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+}
+.person-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--separator);
+}
+.person-row:last-child { border-bottom: none; }
+.person-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.person-meta { color: var(--hint); font-size: 13px; display: flex; align-items: center; gap: 6px; }
+.person-warn { color: var(--hint); font-size: 13px; }
+.row-action {
+  border: none;
+  border-radius: 8px;
+  padding: 6px 10px;
+  background: transparent;
+  color: var(--link);
+  font: inherit;
+  font-size: 15px;
+}
+.row-action.wide { display: block; width: 100%; text-align: left; padding: 12px 16px; }
+.project-row { border-bottom: 1px solid var(--separator); }
+.project-row:last-child { border-bottom: none; }
+.project-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+.project-members { padding: 0 0 8px 16px; }
+.add-form { display: flex; flex-direction: column; gap: 8px; padding: 12px 16px; }
+.add-form input[type='text'], .add-form input[type='email'] {
+  border: 1px solid var(--separator);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font: inherit;
+  background: var(--bg);
+  color: inherit;
+}
+.add-form .check { display: flex; align-items: center; gap: 8px; color: var(--hint); font-size: 14px; }
+.add-form .primary, .confirm .danger {
+  border: none; border-radius: 10px; padding: 10px 14px; font: inherit;
+  background: var(--accent); color: var(--bg);
+}
+.confirm .danger { background: var(--destructive, #d33); color: #fff; }
+.add-form .secondary, .confirm .secondary {
+  border: none; background: transparent; color: var(--link); font: inherit; padding: 8px;
+}
+.confirm { display: flex; flex-direction: column; gap: 8px; padding: 12px 16px; }
+.confirm p { margin: 0; color: var(--hint); font-size: 14px; }
+
+/* Профиль человека (спека person-profile): строка раскрывается в текст о нём. */
+.person-open {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 auto;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  padding: 0;
+}
+.person-about {
+  color: var(--hint);
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.add-form textarea {
+  border: 1px solid var(--separator);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font: inherit;
+  background: var(--bg);
+  color: inherit;
+  resize: vertical;
+}
+.person-row { flex-wrap: wrap; }
+.person-row .add-form { flex: 1 0 100%; padding: 8px 0 0; }
+
+/* «Итоги» (спека stats-page): числа и списки, без графиков. */
+.top-links { display: flex; gap: 8px; margin-bottom: 12px; }
+.top-links .company-link { margin: 0; flex: 1 1 0; text-align: center; }
+.segmented-wrap { flex-wrap: wrap; }
+.stats-label { color: var(--hint); font-size: 13px; padding: 0 16px 8px; }
+.stats-company { font-weight: 600; font-size: 17px; padding: 0 16px 4px; }
+/* Строка человека — кнопка: нажатие раскрывает его задачи со временем. Вид тот же, что у строки. */
+.stats-toggle {
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid var(--separator);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.stats-task { padding-left: 28px; font-size: 14px; }
+/* Строка итогов: имя и под ним словами дела; справа — отработанное время. */
+.stat-who { display: flex; flex-direction: column; gap: 2px; white-space: normal; }
+.stat-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.stat-facts { color: var(--hint); font-size: 13px; }
+.stat-hours { font-weight: 600; white-space: nowrap; }
+
+/* «Доступ для программ» (спека read-tokens). Токен и пример — выделяемый текст: где буфера обмена нет,
+   человек копирует их сам. Перенос по любому символу — иначе строка в 47 знаков раздвигает экран. */
+.token-value {
+  display: block;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--bg);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+  user-select: all;
+  -webkit-user-select: all;
+}
+.token-actions { flex-direction: row; padding: 0; }
+.token-confirm { flex: 1 0 100%; padding: 8px 0 0; }
+/* Токены агентов (спека agent-tokens) — второй раздел того же экрана, под токенами чтения. */
+.agent-tokens { margin-top: 24px; }
+.add-form select {
+  border: 1px solid var(--separator);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font: inherit;
+  background: var(--bg);
+  color: inherit;
+}
+
+/* «Сейчас в работе» — видно на любом экране приложения (спека mini-app). Строка узкая и негромкая:
+   это напоминание, а не заголовок, и оно не должно спорить с делом, на которое человек смотрит. */
+/* Таймер в развёрнутой карточке «Сейчас»: та же строка, что и надзаголовок, — цифры идут рядом со
+   словом «Сейчас», а не отдельным блоком. Моноширинные цифры, иначе строка дёргается каждую секунду. */
+.now-timer {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+  /* Зелёным: цифры идут — работа засчитывается. Цвет свой, а не из темы Telegram: в теме нет
+     «идёт», а серый или синий таймер не отличить от обычной подписи. */
+  color: #34c759;
+}
+
+.running {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 7px 12px;
+  border-radius: 10px;
+  background: var(--section-bg);
+  text-align: left;
+  font-size: 13px;
+  color: var(--hint);
+}
+.running-time {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: #34c759;
+}
+/* Название длинное — обрезаем: строка обязана остаться одной, иначе она станет вторым заголовком. */
+.running-title {
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+}
+.running-company {
+  flex: none;
+  max-width: 40%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* «⋯» — та же кнопка, только уже: в ней один знак, и padding кнопки со словом делал бы её шире
+   соседних без нужды. */
+.btn.more { padding: 0 var(--space-2); letter-spacing: 0.1em; }
+
+/* Редкие действия — списком строк: их выбирают редко и читают по одному, а в ряду чипов глаз
+   спотыкался о шесть одинаковых слов. */
+.action-menu {
+  margin-top: var(--space-2);
+  border-radius: var(--r-m);
+  background: var(--bg-section);
+  overflow: hidden;
+}
+.action-row {
+  display: block;
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  text-align: left;
+  font-size: 15px;
+  color: var(--link);
+}
+.action-row + .action-row { box-shadow: inset 0 0.5px 0 var(--separator); }
+.action-row:active:not(:disabled) { background: color-mix(in srgb, var(--hint) 14%, transparent); }
+.action-row.danger { color: var(--destructive); }
+.action-row:disabled { opacity: 0.45; }
+
+/* Кнопка, которая показывает работу: точка живёт, время идёт. Раньше о том, что дело в работе,
+   говорила только подпись сверху — сама кнопка выглядела так же, как «Перенести» или «Вопрос». */
+.btn.working {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.btn-time {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: #34c759;
+}
+.pulse {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #34c759;
+  animation: pulse 1.6s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.35; transform: scale(0.8); }
+}
+/* Кому анимация мешает — точка просто горит. */
+@media (prefers-reduced-motion: reduce) {
+  .pulse { animation: none; }
+}
+
+/* Срок календарём (спека self-set-due): поле даты прозрачно лежит поверх кнопки и само получает нажатие —
+   скрытое поле, открытое из кода, у части клиентов календарь не открывало. */
+.due-btn { font-size: 14px; color: var(--link); }
+.due-btn.past { color: var(--warm); }
+.date-picker { position: relative; display: inline-flex; }
+.date-picker > .btn { display: inline-flex; align-items: center; }
+.date-input-over {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.date-input-over:disabled { cursor: default; }
+.btn.is-disabled { opacity: 0.45; }
+.link-btn.is-disabled { color: var(--hint); }
+.date-input-over::-webkit-calendar-picker-indicator { position: absolute; inset: 0; width: 100%; height: 100%; cursor: pointer; }
+.date-input-inline { font: inherit; font-size: 14px; color: var(--text); background: transparent; border: 1px solid var(--hint, currentColor); border-radius: 8px; padding: 4px 8px; }
+.action-row.muted { color: var(--subtitle); }
+.due-ask-text { flex-basis: 100%; color: var(--subtitle); }
+
+/* Просьба назвать срок у исполнителя — над действиями, с той же кнопкой календаря. */
+.due-ask {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+  padding: var(--space-3) var(--space-4);
+  border-radius: 12px;
+  background: var(--bg-grouped);
+  font-size: 15px;
+}
+
+/* «Кто в деле» (спека task-reviewer): роль приглушена, как подпись блока, имя — обычным текстом. */
+.people-row { margin-top: 2px; }
+.people-role,
+.people-you { color: var(--hint); }
+
+/* Заслон объявления (спека announcements): выше просмотра фото, закрыть можно только подтверждением. */
+.announcement-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-grouped);
+  padding: calc(var(--inset-top) + var(--space-4)) var(--space-4) calc(var(--inset-bottom) + var(--space-4));
+  overscroll-behavior: contain;
+}
+.announcement-card {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-4);
+  border-radius: var(--r-l);
+  background: var(--bg-section);
+}
+.announcement-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-3); }
+.announcement-title { font-size: 20px; font-weight: 700; }
+.announcement-progress { color: var(--hint); font-size: 14px; }
+.announcement-from { margin-top: var(--space-1); color: var(--subtitle); font-size: 14px; }
+.announcement-text { margin-top: var(--space-3); white-space: pre-wrap; overflow-wrap: anywhere; user-select: text; -webkit-user-select: text; }
+.announcement-actions { flex: 0 0 auto; padding-top: var(--space-4); }
+.announcement-check { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) 0; font-weight: 600; }
+.announcement-check input { width: 22px; height: 22px; flex: 0 0 auto; }
+.announcement-ok { width: 100%; height: 44px; margin-top: var(--space-2); }

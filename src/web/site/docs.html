@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Documentation — Taskano</title>
+<meta name="description" content="How to connect Taskano to Claude, set up a company, invite people and lead their work from a conversation.">
+<meta name="robots" content="index, follow">
+<link rel="icon" type="image/png" href="/favicon.png?v=2">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2">
+<link rel="manifest" href="/site.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/legal.css?v=2">
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="brand" href="/"><img src="/logo-96.png?v=2" width="28" height="28" alt="">Task<span>ano</span></a>
+    <nav aria-label="Site">
+      <a href="/docs" aria-current="page">Docs</a>
+      <a href="/privacy">Privacy</a>
+      <a href="/terms">Terms</a>
+      <a href="/support">Support</a>
+    </nav>
+  </header>
+
+  <main>
+    <h1>Documentation</h1>
+    <p class="updated">Last updated: 2 October 2026</p>
+
+    <p class="lead">Taskano connects Claude to the people who do the work. You set tasks, follow up and
+    accept results in a conversation with Claude; each person receives one clear task at a time in
+    Telegram, in their own language, and answers there.</p>
+
+    <h2>Who it is for</h2>
+    <ul>
+      <li><strong>People who hand out work</strong> — a company owner, a manager, or Claude agents acting
+      for them. They work in Claude through the Taskano connector.</li>
+      <li><strong>People who do the work</strong> — they use the Telegram bot
+      <a href="https://t.me/Taskano_bot">@Taskano_bot</a> and the small app inside Telegram (Mini App).
+      They need no Claude account. Tasks, reminders and answers are translated for each of them; the bot
+      itself speaks English, Russian, Turkish and Vietnamese, and for other languages it shows an English
+      interface while the text of the tasks is still translated.</li>
+    </ul>
+
+    <h2>What you need</h2>
+    <ul>
+      <li>A Claude account on a plan that lets you add connectors — either Taskano from the Claude
+      connector directory or a custom connector by URL.</li>
+      <li>A Google account or any email address. Sign in with Google, or with a one-time code sent to your email; there are no passwords.</li>
+      <li>A Telegram account for every person who will receive tasks.</li>
+    </ul>
+    <div class="note">
+      <strong>Price.</strong> Taskano is free during early access. Paid plans will come; existing
+      accounts will be told in advance, and nothing is charged automatically — we do not ask for a card.
+      See <a href="/terms">Terms</a>.
+    </div>
+
+    <h2 id="setup">Setup</h2>
+
+    <h3>1. Connect Taskano to Claude</h3>
+    <ol>
+      <li>Add Taskano from the connector directory in Claude, or add a custom connector: in claude.ai
+      open <strong>Settings → Connectors → Add custom connector</strong>, name it <code>Taskano</code>
+      and use the URL <code>https://taskano.app/mcp</code>.</li>
+      <li>Press <strong>Connect</strong>. A Taskano page opens: press <strong>Sign in with Google</strong>, or
+      enter your email and then the code from the letter we send.</li>
+      <li>Press <strong>Allow</strong>. Claude can now act in Taskano on your behalf — create tasks, read
+      their status and reports. You can revoke this at any time in Claude's connector settings.</li>
+    </ol>
+
+    <h3 id="mcp">The connector address and other clients</h3>
+    <p>Taskano is a remote MCP server at <code>https://taskano.app/mcp</code> (Streamable HTTP, OAuth 2.1
+    sign-in with dynamic client registration).</p>
+    <ul>
+      <li><strong>Claude on the web, desktop and mobile</strong> — a custom connector added in claude.ai is
+      available in all of them.</li>
+      <li><strong>Claude Code</strong> — <code>claude mcp add --transport http taskano https://taskano.app/mcp</code>,
+      then <code>/mcp</code> in Claude Code to sign in.</li>
+      <li><strong>Other MCP clients</strong> — any client that supports remote servers with OAuth connects with
+      the same address.</li>
+    </ul>
+
+    <h3>2. Add the Taskano skill (recommended)</h3>
+    <p>The connector works on its own, but the skill teaches Claude how to lead people well: how to
+    phrase a task so it can be checked, whom to give it to, when to follow up. It is open source at
+    <a href="https://github.com/example-org/taskano-skill">github.com/example-org/taskano-skill</a>. In
+    claude.ai open <strong>Settings → Capabilities → Skills → Upload skill</strong> and upload the
+    <code>skills/taskano</code> folder from that repository as a ZIP archive. In Claude Code, copy the
+    same folder to <code>~/.claude/skills/taskano</code>. The repository README has the details.</p>
+
+    <h3>3. Create your company</h3>
+    <p>Tell Claude: <em>“Set up my company in Taskano.”</em> Claude creates it in the conversation — only
+    the company name is needed — and asks the rest as it comes up. A new company starts in English and
+    UTC; say your language and city (for example <em>“we work in Berlin time”</em>) and Claude sets the
+    language and time zone. Settings can be changed in any later conversation.</p>
+
+    <h3>4. Invite people</h3>
+    <p>Name each person and their email: <em>“Invite Anna, anna@example.com, she speaks Turkish and runs
+    the warehouse.”</em> Anna receives an email with a link to the Telegram bot. She opens it, agrees to
+    the terms, confirms her time zone, and from then on receives tasks in the bot. Until a person has
+    signed in, they receive nothing — Claude can tell you who has.</p>
+    <p><strong>Link your own Telegram too:</strong> open @Taskano_bot, send <code>/start</code> and sign in
+    with the same email. Without this Taskano has no way to reach you with decisions, proposals and
+    alerts.</p>
+
+    <h3>5. Give the first task</h3>
+    <p><em>“Have Anna photograph shelf B4 and count item 4471 by 5 pm today — the marketplace shows 12,
+    the warehouse sheet says 3.”</em> Claude records what to do, why, what counts as done and the due
+    date, and the task lands in Anna's queue in Telegram, in Turkish.</p>
+
+    <h2>Everyday use</h2>
+    <p>You speak to Claude in your own words; Claude chooses the tools. Some examples:</p>
+    <table>
+      <thead><tr><th>You say</th><th>What happens</th></tr></thead>
+      <tbody>
+        <tr><td data-label="You say">“What's waiting for me in Taskano?”</td><td data-label="What happens">A briefing: what changed, results waiting for review, blocked work and open questions, people left without a next step, decided proposals.</td></tr>
+        <tr><td data-label="You say">“Have Mark send the samples to the client by Friday.”</td><td data-label="What happens">A task for Mark with the reason, the done criteria and the date. He gets it in Telegram.</td></tr>
+        <tr><td data-label="You say">“Ask Mark to name the date for the price list himself.”</td><td data-label="What happens">Mark is asked to set the due date and picks it in a calendar in the app. No answer in a working day — he gets a reminder; in two — you hear about it.</td></tr>
+        <tr><td data-label="You say">“Tell Anna to count only sealed boxes.”</td><td data-label="What happens">The answer goes to Anna's open question, translated, and the task is unblocked.</td></tr>
+        <tr><td data-label="You say">“Mark's price list looks right, accept it.” / “Send it back — the VAT column is missing.”</td><td data-label="What happens">The result is accepted, or returned for rework with your comment.</td></tr>
+        <tr><td data-label="You say">“How is Anna doing?”</td><td data-label="What happens">What she is doing now, her queue, what she is waiting on, her open questions and what changed since the last look.</td></tr>
+        <tr><td data-label="You say">“How many hours did the team log last week?”</td><td data-label="What happens">Hours by day, by task or by area, with days counted in each person's own time zone.</td></tr>
+        <tr><td data-label="You say">“Make a closed project ‘Q4 hiring’ for me and Maria.”</td><td data-label="What happens">A project only its members see; tasks can be filed under it.</td></tr>
+        <tr><td data-label="You say">“I've sent the contract, that one is done.”</td><td data-label="What happens">A task you set for yourself is closed as done at once — there is nobody else to accept it — and counts in the results.</td></tr>
+        <tr><td data-label="You say">“Remind me to call the accountant on Monday.”</td><td data-label="What happens">An item in your personal space, not visible to the company.</td></tr>
+      </tbody>
+    </table>
+    <p>Claude agents can also lead an area for you — own a plan, break it into steps, assign them and
+    check the results. Anything that matters (money, new people, closing a task someone else set) comes
+    to you as a proposal to accept or decline.</p>
+
+    <h3>What the connector can do</h3>
+    <p>The connector has 62 tools. Every tool carries a title and is marked as read-only or as one that
+    changes data; the ones that remove or cancel something are marked as destructive.</p>
+    <table>
+      <thead><tr><th>Group</th><th>Tools</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Group">Orientation</td><td data-label="Tools"><code>whoami</code>, <code>get_capabilities</code>, <code>find_person</code>, <code>find_task</code>, <code>list_agents</code></td></tr>
+        <tr><td data-label="Group">Company setup</td><td data-label="Tools"><code>create_org</code>, <code>update_org_settings</code>, <code>get_setup_status</code>, <code>create_agent</code>, <code>update_agent</code>, <code>get_playbook</code>, <code>set_playbook</code>, <code>set_person_settings</code>, <code>connect_runner</code></td></tr>
+        <tr><td data-label="Group">People</td><td data-label="Tools"><code>invite_person</code>, <code>offboard_person</code></td></tr>
+        <tr><td data-label="Group">Announcements</td><td data-label="Tools"><code>send_announcement</code>, <code>raise_alert</code>, <code>resolve_alert</code>, <code>announcement_status</code></td></tr>
+        <tr><td data-label="Group">Tasks and plans</td><td data-label="Tools"><code>create_task</code>, <code>update_task</code>, <code>cancel_task</code>, <code>get_task</code>, <code>adopt_task</code>, <code>request_due</code>, <code>add_source</code>, <code>create_plan</code>, <code>update_plan</code>, <code>add_step</code>, <code>release_step</code>, <code>resolve_waiting</code>, <code>move_to_org</code></td></tr>
+        <tr><td data-label="Group">Working with people on a task</td><td data-label="Tools"><code>answer_question</code>, <code>review_result</code>, <code>comment_task</code>, <code>propose_change</code>, <code>list_proposals</code>, <code>log_decision</code></td></tr>
+        <tr><td data-label="Group">Briefing and follow-up</td><td data-label="Tools"><code>get_briefing</code>, <code>ack_briefing</code>, <code>review_person</code>, <code>get_changes_since</code>, <code>agent_metrics</code>, <code>get_agent_notes</code>, <code>set_agent_note</code></td></tr>
+        <tr><td data-label="Group">Projects</td><td data-label="Tools"><code>create_project</code>, <code>list_projects</code>, <code>update_project</code>, <code>add_project_member</code>, <code>remove_project_member</code></td></tr>
+        <tr><td data-label="Group">Your own tasks</td><td data-label="Tools"><code>my_tasks</code>, <code>take_task</code>, <code>submit_task</code>, <code>ask_about_task</code>, <code>log_work</code></td></tr>
+        <tr><td data-label="Group">Time</td><td data-label="Tools"><code>time_report</code></td></tr>
+        <tr><td data-label="Group">Work chats</td><td data-label="Tools"><code>list_groups</code>, <code>update_group</code>, <code>get_attachment</code>, <code>move_attachment</code>, <code>ask_done</code></td></tr>
+      </tbody>
+    </table>
+
+    <h3>Work chats</h3>
+    <p>Add @Taskano_bot to a team chat in Telegram and make it an administrator. It stays silent, files
+    photos and messages from members of your company under the right tasks, and proposes tasks from
+    clear assignments. Messages from people who have not signed in to Taskano are not stored.</p>
+
+    <h3>Working while you are away</h3>
+    <p>Without extra setup, agents catch up each time you open a conversation with Claude. If people
+    start waiting for answers while you are away, you can connect a Claude routine that runs the agents
+    on a schedule; the skill's setup guide walks through it.</p>
+
+    <h2>Limits</h2>
+    <table>
+      <thead><tr><th>What</th><th>Limit</th></tr></thead>
+      <tbody>
+        <tr><td data-label="What">Companies you can create</td><td data-label="Limit">3 per person</td></tr>
+        <tr><td data-label="What">Announcements</td><td data-label="Limit">10 per company and 3 per agent per 24 hours</td></tr>
+        <tr><td data-label="What">Invitation emails from a company</td><td data-label="Limit">20 per 24 hours; in the company's first 7 days, 10 per 24 hours and 30 in total</td></tr>
+        <tr><td data-label="What">New companies across Taskano</td><td data-label="Limit">A daily limit protects the service from bulk sign-ups. If it is reached, try again the next day or write to support.</td></tr>
+        <tr><td data-label="What">AI budget</td><td data-label="Limit">Each company has a monthly AI budget, $20 by default, which the owner can change.</td></tr>
+      </tbody>
+    </table>
+    <p>The AI budget pays for translation and for reading work chats — not for your conversations with
+    Claude. When it runs out, the owner is notified, and translation and chat analysis pause: people
+    see text in the language it was written in. They resume on their own once the budget is raised, or
+    when the next month starts.</p>
+
+    <h2>Data and privacy</h2>
+    <p>The database and the application run on servers in Germany (Hetzner). Taskano stores what the
+    work needs — people's names, emails, Telegram IDs, languages and time zones, and the tasks with
+    everything attached to them. Text is sent to Anthropic to be translated and, for linked work chats,
+    to be filed under the right task. Data of different
+    companies is separated in the database itself. The connector does not read your Claude
+    conversations; it receives only what a tool call passes to it. We do not sell data and do not train
+    models on it. The full list of what is stored, who processes it and how to have it deleted is in
+    the <a href="/privacy">Privacy Policy</a>.</p>
+
+    <h2>Troubleshooting</h2>
+
+    <h3>The sign-in code did not arrive</h3>
+    <p>Look in spam, and check the address you typed. Codes are single-use and expire within minutes —
+    if some time has passed, start the sign-in again to get a new one.</p>
+
+    <h3>Claude says I have to name a company</h3>
+    <p>You belong to more than one company. Say which one you mean — by name is enough.</p>
+
+    <h3>An invited person gets no tasks</h3>
+    <p>They have not opened the invitation link and started the bot yet. Ask Claude to resend the
+    invitation — a new link goes to the same email. The link is never shown to you: whoever opens it
+    signs in as that person, so it reaches only the owner of the address.</p>
+
+    <h3>“This Telegram is already linked to someone else”</h3>
+    <p>That Telegram account belongs to another Taskano user, and accounts are never merged. Sign in with
+    the email that account already uses, or use another Telegram account.</p>
+
+    <h3>Tasks arrive untranslated</h3>
+    <p>The company's AI budget for the month has run out. Ask Claude to raise it — translation resumes
+    within a few minutes. Otherwise it resumes on its own when the next month starts.</p>
+
+    <h3>Creating a company or inviting someone is refused</h3>
+    <p>One of the limits above has been reached. The message says which one and when it will be possible
+    again.</p>
+
+    <h3>The connector fails to connect</h3>
+    <p>Remove it in Claude's connector settings and add it again with <code>https://taskano.app/mcp</code>.
+    If it still fails, write to us with the time it happened.</p>
+
+    <h2>Support</h2>
+    <p>Write to <a href="mailto:support@taskano.app">support@taskano.app</a>. Mention the task's short
+    number (like <code>NOR-014</code>) or the company name, and whether it happened in Claude, in the bot
+    or in the Mini App. More on the <a href="/support">Support</a> page.</p>
+  </main>
+
+  <footer>
+    <span>© 2026 Taskano</span>
+    <nav aria-label="Footer">
+      <a href="/">Home</a>
+      <a href="/privacy">Privacy</a>
+      <a href="/terms">Terms</a>
+      <a href="/support">Support</a>
+    </nav>
+  </footer>
+</div>
+</body>
+</html>

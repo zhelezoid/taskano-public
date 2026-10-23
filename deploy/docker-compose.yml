@@ -1,0 +1,118 @@
+# deploy/docker-compose.yml — компоуз-проект пилота, копируется в /opt/taskano (спека pilot-deploy).
+# Порты наружу не публикуются нигде: web доступен только через nginx-proxy по внешней сети,
+# по фиксированному имени контейнера (nginx резолвит `taskano-web:3000`, см. deploy/nginx/).
+
+x-taskano-image: &taskano-image
+  build:
+    context: ./app
+    dockerfile: Dockerfile
+  image: taskano:${TASKANO_VERSION:-local}
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: taskano-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: taskano_owner
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: taskano
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+    networks: [taskano]
+    mem_limit: 1g
+    cpus: 1.0
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U taskano_owner -d taskano"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Одноразовый прогон миграций (src/db/migrate.ts): заводит схему и роли
+  # taskano_app/taskano_system под владельцем DATABASE_URL, потом выходит.
+  # web/worker стартуют только после его успешного завершения.
+  migrate:
+    <<: *taskano-image
+    container_name: taskano-migrate
+    env_file: .env
+    environment:
+      NODE_ENV: production
+    command: ["node", "dist/src/db/migrate.js"]
+    depends_on:
+      db:
+        condition: service_healthy
+    networks: [taskano]
+    restart: "no"
+
+  web:
+    <<: *taskano-image
+    container_name: taskano-web
+    env_file: .env
+    environment:
+      TASKANO_ROLE: web
+      PORT: "3000"
+      NODE_ENV: production
+      MEDIA_DIR: /data/media
+      # Владелец базы и пароли ролей нужны только migrate (аудит безопасности 07.10): взлом web или
+      # worker не должен давать обход RLS. environment перекрывает env_file — значения пустые.
+      DATABASE_URL: ""
+      POSTGRES_PASSWORD: ""
+      APP_DB_PASSWORD: ""
+      SYSTEM_DB_PASSWORD: ""
+      CLOUDFLARE_DNS_TOKEN: ""
+    volumes:
+      - media:/data/media
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    networks:
+      - taskano
+      - nginx_proxy
+    mem_limit: 512m
+    cpus: 1.0
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    restart: unless-stopped
+
+  worker:
+    <<: *taskano-image
+    container_name: taskano-worker
+    env_file: .env
+    environment:
+      TASKANO_ROLE: worker
+      NODE_ENV: production
+      MEDIA_DIR: /data/media
+      # Владелец базы и пароли ролей нужны только migrate (аудит безопасности 07.10): взлом web или
+      # worker не должен давать обход RLS. environment перекрывает env_file — значения пустые.
+      DATABASE_URL: ""
+      POSTGRES_PASSWORD: ""
+      APP_DB_PASSWORD: ""
+      SYSTEM_DB_PASSWORD: ""
+      CLOUDFLARE_DNS_TOKEN: ""
+    volumes:
+      - media:/data/media
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    networks: [taskano]
+    mem_limit: 512m
+    cpus: 1.0
+    restart: unless-stopped
+
+# Изображения из рабочих групп (спека group-intake): web отдаёт их агенту и в бот, worker скачивает и чистит.
+volumes:
+  media:
+    name: taskano-media
+
+networks:
+  taskano:
+    driver: bridge
+  # Внешняя сеть nginx-proxy: имя переопределяется NGINX_NETWORK — по факту с сервера
+  # это `nginx-proxy-net` (проверить `docker network ls`, если сосед переименует сеть).
+  nginx_proxy:
+    name: ${NGINX_NETWORK:-nginx-proxy-net}
+    external: true

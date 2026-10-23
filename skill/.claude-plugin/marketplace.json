@@ -1,0 +1,15 @@
+{
+  "name": "taskano",
+  "description": "Taskano for Claude: assign work to your team, people do it in Telegram in their own language.",
+  "owner": {
+    "name": "Taskano",
+    "email": "support@taskano.app"
+  },
+  "plugins": [
+    {
+      "name": "taskano",
+      "source": "./",
+      "description": "Assign work to your team from Claude; people do it in Telegram, in their own language."
+    }
+  ]
+}

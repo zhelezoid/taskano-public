@@ -1,0 +1,41 @@
+# deploy/nginx/taskano.conf.template — конфиг Taskano для nginx-proxy.
+# Копируется в conf.d nginx-proxy на сервере с заменой __DOMAIN__ на реальный домен
+# (например taskano.example.com). HTTPS терминирует Cloudflare (прокси, оранжевое облако); на 443 —
+# сертификат Cloudflare Origin CA (/etc/nginx/ssl/__DOMAIN__/origin/), режим Full (strict).
+# www → корень.
+# `set $up taskano-web:3000` + `resolver` — чтобы nginx не падал на старте, если контейнер
+# web ещё не поднят (ленивое DNS-разрешение вместо proxy_pass на статичное имя).
+server {
+    listen 80;
+    listen 443 ssl;
+    http2 on;
+    server_name www.__DOMAIN__;
+    ssl_certificate /etc/nginx/ssl/__DOMAIN__/origin/cert.pem;
+    ssl_certificate_key /etc/nginx/ssl/__DOMAIN__/origin/key.pem;
+    return 301 https://__DOMAIN__$request_uri;
+}
+server {
+    listen 80;
+    listen 443 ssl;
+    http2 on;
+    server_name __DOMAIN__;
+    ssl_certificate /etc/nginx/ssl/__DOMAIN__/origin/cert.pem;
+    ssl_certificate_key /etc/nginx/ssl/__DOMAIN__/origin/key.pem;
+    # Посетитель пришёл по http (Cloudflare сообщает схему в CF-Visitor) → на https. По заголовку, а не по
+    # порту: в режиме Flexible Cloudflare ходит на сервер по http всегда.
+    if ($http_cf_visitor ~ '"scheme":"http"') { return 301 https://__DOMAIN__$request_uri; }
+    resolver 127.0.0.11 valid=10s ipv6=off;
+    set $up taskano-web:3000;
+
+    client_max_body_size 20m;
+
+    location / {
+        proxy_pass http://$up;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_read_timeout 60s;
+    }
+}

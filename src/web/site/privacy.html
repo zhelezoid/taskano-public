@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Privacy Policy — Taskano</title>
+<meta name="description" content="What data Taskano stores, why, where it is kept and how to have it deleted.">
+<meta name="robots" content="index, follow">
+<link rel="icon" type="image/png" href="/favicon.png?v=2">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2">
+<link rel="manifest" href="/site.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/legal.css?v=2">
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="brand" href="/"><img src="/logo-96.png?v=2" width="28" height="28" alt="">Task<span>ano</span></a>
+    <nav aria-label="Site">
+      <a href="/docs">Docs</a>
+      <a href="/privacy" aria-current="page">Privacy</a>
+      <a href="/terms">Terms</a>
+      <a href="/support">Support</a>
+    </nav>
+  </header>
+
+  <main>
+    <h1>Privacy Policy</h1>
+    <p class="updated">Last updated: 2 October 2026</p>
+
+    <p class="lead">Taskano is a task tool: AI agents assign work to people, and people do it through a
+    Telegram bot and a Mini App. This page describes exactly what the service stores, why, where it is
+    kept and how to have it removed. It is written to be read, not to be skimmed past.</p>
+
+    <h2>Who is responsible</h2>
+    <p>The service is operated by the Taskano team, reachable at
+    <a href="mailto:support@taskano.app">support@taskano.app</a>. Questions about data, including
+    deletion requests, go to the same address; see <a href="/support">Support</a>.</p>
+
+    <h2>What we store</h2>
+
+    <h3>About a person</h3>
+    <table>
+      <thead><tr><th>Data</th><th>Why it is needed</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Data">Display name</td><td data-label="Why">So colleagues and agents can tell people apart in lists and cards.</td></tr>
+        <tr><td data-label="Data">Email address</td><td data-label="Why">Invitations and sign-in codes. Sign-in is by one-time code or with Google; we never store passwords.</td></tr>
+        <tr><td data-label="Data">Google account ID</td><td data-label="Why">If you sign in with Google: we keep the account identifier Google returns, so that only the same Google account can sign in to your Taskano account with that email. We receive your email and its verification status; we do not use your Google profile otherwise and get no access to your Google data.</td></tr>
+        <tr><td data-label="Data">Telegram user ID and chat ID</td><td data-label="Why">To deliver tasks in the bot and to authenticate the Mini App.</td></tr>
+        <tr><td data-label="Data">When you last opened the bot and the Mini App</td><td data-label="Why">So the owner and administrators of your company can see whether tasks reach you. Only the time of the last visit is kept, rounded to the hour; only owners and administrators of a company you have joined see it.</td></tr>
+        <tr><td data-label="Data">Language, country, time zone, working hours</td><td data-label="Why">Each person reads work in their own language, and deadlines are counted in their working days.</td></tr>
+        <tr><td data-label="Data">Role in a company</td><td data-label="Why">It decides what a person may see and do.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>About the work</h3>
+    <p>Tasks and everything attached to them: title, the reason behind the task, what counts as done,
+    due dates, status, notes people write, questions they ask, reasons they decline, time spent, links
+    and files added to a task, and photos forwarded from work chats. Agents connected to an account
+    also store their plans, decisions and proposals.</p>
+
+    <h3>Technical records</h3>
+    <p>An event log of what happened to each task (who took it, when it was submitted, when it was
+    accepted) — this is how the product works, not analytics. Server logs contain request errors and
+    timestamps. We do not use advertising trackers or third-party analytics on this site.</p>
+
+    <h2>What we do not do</h2>
+    <ul>
+      <li>We do not sell personal data and do not share it for advertising.</li>
+      <li>We do not train AI models on your data.</li>
+      <li>We do not read Telegram chats. The bot receives only messages addressed to it, and in work
+      groups only what is explicitly forwarded to it.</li>
+      <li>We do not request access to your Claude conversation history, memory or files.</li>
+    </ul>
+
+    <h2>Who else processes the data</h2>
+    <p>The service uses a small number of providers, each for one purpose:</p>
+    <table>
+      <thead><tr><th>Provider</th><th>What it receives</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Provider">Hetzner (Germany)</td><td data-label="Receives">All service data</td><td data-label="Purpose">Servers and database hosting</td></tr>
+        <tr><td data-label="Provider">Telegram</td><td data-label="Receives">Messages the bot sends and receives</td><td data-label="Purpose">Delivery of tasks and replies</td></tr>
+        <tr><td data-label="Provider">Anthropic</td><td data-label="Receives">Text being translated; messages and images from work chats the bot was added to</td><td data-label="Purpose">Translating tasks and notes into each person's language; filing work-chat messages to the right tasks</td></tr>
+        <tr><td data-label="Provider">Resend</td><td data-label="Receives">Email address and letter body</td><td data-label="Purpose">Invitations and sign-in codes</td></tr>
+        <tr><td data-label="Provider">Google</td><td data-label="Receives">Nothing from us; you sign in at Google, and Google returns your email and account ID</td><td data-label="Purpose">Optional sign-in with Google</td></tr>
+        <tr><td data-label="Provider">Cloudflare</td><td data-label="Receives">Connection metadata</td><td data-label="Purpose">TLS and protection of the public endpoint</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Where the data is kept</h2>
+    <p>The database and the application run on servers in Germany. Data leaves them only towards the
+    providers listed above, and only the part each of them needs.</p>
+
+    <h2>The Claude connector</h2>
+    <p>When you connect Taskano to Claude, the connector acts within one account and only through the
+    tools the connector declares. Access is granted by OAuth: you approve it, and you can revoke it at
+    any time in Claude's connector settings — after that the tokens stop working. The connector does
+    not read your conversations; it receives only what a tool call passes to it.</p>
+
+    <h2>How long we keep it</h2>
+    <ul>
+      <li>Work data — while the account exists.</li>
+      <li>Sign-in codes — minutes; they are single use.</li>
+      <li>Server logs — up to 30 days.</li>
+      <li>Database backups — up to 30 days, after which they are overwritten.</li>
+    </ul>
+
+    <h2>Deleting data</h2>
+    <p>A person removed from a company stops seeing its work immediately. To have an account and its
+    personal data deleted, write to <a href="mailto:support@taskano.app">support@taskano.app</a> from
+    the address on the account; we do this within 30 days. Tasks that belong to a company remain with
+    the company, with the person's name replaced — otherwise the company would lose its own history of
+    work it paid for. Backups are overwritten on the schedule above.</p>
+
+    <h2>Your rights</h2>
+    <p>You can ask what data we hold about you, correct it, have it deleted, or receive a copy. Write
+    to <a href="mailto:support@taskano.app">support@taskano.app</a>. If you are in the EU or the UK,
+    these rights are the ones granted to you by the GDPR.</p>
+
+    <h2>Children</h2>
+    <p>The service is for work and is not intended for people under 16.</p>
+
+    <h2>Changes</h2>
+    <p>If this policy changes in a way that affects what we collect or whom we share it with, the date
+    at the top changes and account owners are notified by email before the change takes effect.</p>
+
+    <div class="note">
+      <strong>Security.</strong> Data of different companies is separated in the database itself, not
+      only in application code: a request made on behalf of one company cannot read another company's
+      rows. Traffic runs over TLS. Secrets and tokens are stored encrypted.
+    </div>
+  </main>
+
+  <footer>
+    <span>© 2026 Taskano</span>
+    <nav aria-label="Footer">
+      <a href="/">Home</a>
+      <a href="/docs">Docs</a>
+      <a href="/terms">Terms</a>
+      <a href="/support">Support</a>
+    </nav>
+  </footer>
+</div>
+</body>
+</html>

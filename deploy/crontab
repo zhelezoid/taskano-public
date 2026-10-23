@@ -1,0 +1,6 @@
+# deploy/crontab — строки для root crontab на сервере пилота (спека pilot-deploy).
+# Установка: crontab -l > /tmp/crontab.bak (может быть пусто) ; cat deploy/crontab >> /tmp/crontab.bak ; crontab /tmp/crontab.bak
+# Время — UTC (crontab root на сервере обычно в UTC, сверить `date` перед установкой).
+30 3 * * * /opt/taskano/bin/backup >> /opt/taskano/logs/backup-cron.log 2>&1
+0 4 * * 0 /opt/taskano/bin/restore-check >> /opt/taskano/logs/restore-check-cron.log 2>&1
+*/5 * * * * /opt/taskano/bin/monitor >> /opt/taskano/logs/monitor-cron.log 2>&1

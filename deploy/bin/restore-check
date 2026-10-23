@@ -1,0 +1,117 @@
+#!/usr/bin/env bash
+# deploy/bin/restore-check — еженедельная проверка бэкапа (вс 04:00 UTC, deploy/crontab):
+# поднять временную Postgres, восстановить последний дамп, сверить число строк ключевых
+# таблиц с боевой базой, удалить контейнер. Итог — в лог; при провале — сообщение владельцу
+# через Bot API тестового бота (спека pilot-deploy).
+set -euo pipefail
+export LC_ALL=C
+
+COMPOSE_DIR="${TASKANO_COMPOSE_DIR:-/opt/taskano}"
+BACKUP_DIR="${TASKANO_BACKUP_DIR:-$COMPOSE_DIR/backups}"
+LOG_DIR="${TASKANO_LOG_DIR:-$COMPOSE_DIR/logs}"
+LOG_FILE="$LOG_DIR/restore-check.log"
+ENV_FILE="${TASKANO_ENV_FILE:-$COMPOSE_DIR/.env}"
+
+# Правило сравнения — точное равенство, но с боем НА МОМЕНТ ДАМПА, а не на момент проверки.
+# Прежнее правило «не меньше 99% от текущего боя» давало ложную тревогу на живом сервисе: дамп в
+# 03:30, проверка в 04:00, за полчаса появилось одно дело — и 70 из 71 это уже 98.6%. Так и вышло
+# 20.09: проверка упала на здоровом дампе. На малых числах доля вообще не работает: одно новое дело
+# из десяти — это минус 10%.
+#
+# Время дампа берётся из его имени (taskano-ГГГГММДД-ЧЧММ.dump, UTC), и в бою считаются только
+# строки, созданные не позже него. Тогда равенство обязано быть точным, и любое расхождение —
+# настоящая потеря данных, а не работа пилота.
+#
+# У каждой таблицы своя колонка времени: у ленты событий это `at`, у остальных `created_at`.
+TABLES=(users orgs tasks events time_entries)
+time_column() { [[ "$1" == "events" ]] && echo at || echo created_at; }
+
+mkdir -p "$LOG_DIR"
+
+log() { echo "[$(date -u +%FT%TZ)] $*" >> "$LOG_FILE"; }
+
+# Не печатает значения токенов никуда — только читает их из .env для запроса к Bot API.
+notify_owner() {
+  local text="$1"
+  [[ -f "$ENV_FILE" ]] || return 0
+  local token chat_id
+  token="$(grep -E '^TELEGRAM_TEST_BOT_TOKEN=' "$ENV_FILE" 2>/dev/null | tail -n1 | cut -d= -f2-)"
+  chat_id="$(grep -E '^OWNER_TELEGRAM_CHAT_ID=' "$ENV_FILE" 2>/dev/null | tail -n1 | cut -d= -f2-)"
+  # Чата владельца в .env может не быть — и тогда провал проверки уходил в лог, который никто не
+  # читает (так и случилось 20.09). Система знает этот чат сама: владелец организации, вошедший в
+  # бота. Настраивать нечего, значит и забыть нечего.
+  if [[ -z "$chat_id" ]]; then
+    chat_id="$(cd "$COMPOSE_DIR" && docker compose exec -T db psql -U taskano_owner -d taskano -t -A -c \
+      "select tl.telegram_user_id from telegram_links tl join orgs o on o.owner_user_id = tl.user_id
+        where o.kind = 'company' and tl.blocked_at is null order by o.created_at limit 1" 2>/dev/null | tr -d '[:space:]')"
+  fi
+  if [[ -z "$token" || -z "$chat_id" ]]; then
+    log "некому отправить: нет TELEGRAM_TEST_BOT_TOKEN или владелец не вошёл в бота"
+    return 0
+  fi
+  curl -fsS -X POST "https://api.telegram.org/bot${token}/sendMessage" \
+    -d chat_id="${chat_id}" \
+    --data-urlencode text="${text}" \
+    >/dev/null 2>&1 || log "не удалось отправить сообщение владельцу"
+}
+
+fail() {
+  log "ПРОВАЛ: $1"
+  notify_owner "Taskano restore-check: провал — $1"
+  exit 1
+}
+
+latest_dump="$(ls -1t "$BACKUP_DIR"/taskano-*.dump 2>/dev/null | head -n1 || true)"
+[[ -n "$latest_dump" ]] || fail "нет ни одного дампа в $BACKUP_DIR"
+
+container="taskano-restore-check-$$-$(date +%s)"
+cleanup() { docker rm -f "$container" >/dev/null 2>&1 || true; }
+trap cleanup EXIT
+
+log "старт проверки, дамп: $(basename "$latest_dump")"
+
+docker run -d --name "$container" \
+  -e POSTGRES_USER=taskano_owner -e POSTGRES_PASSWORD=restore-check -e POSTGRES_DB=taskano \
+  postgres:16-alpine >/dev/null
+
+# Ждём готовности временной базы.
+ready=0
+for _ in $(seq 1 30); do
+  if docker exec "$container" pg_isready -U taskano_owner -d taskano >/dev/null 2>&1; then
+    ready=1
+    break
+  fi
+  sleep 1
+done
+[[ "$ready" -eq 1 ]] || fail "временная Postgres не поднялась за 30с"
+
+docker exec -i "$container" pg_restore -U taskano_owner -d taskano --no-owner --no-privileges < "$latest_dump" \
+  || fail "pg_restore не восстановил дамп"
+
+# Время дампа из его имени: taskano-20260921-0330.dump → 2026-09-21 03:30 UTC.
+dump_name="$(basename "$latest_dump")"
+if [[ "$dump_name" =~ taskano-([0-9]{4})([0-9]{2})([0-9]{2})-([0-9]{2})([0-9]{2})\.dump ]]; then
+  dump_time="${BASH_REMATCH[1]}-${BASH_REMATCH[2]}-${BASH_REMATCH[3]} ${BASH_REMATCH[4]}:${BASH_REMATCH[5]}:00+00"
+else
+  fail "имя дампа $dump_name не даёт времени — сверять не с чем"
+fi
+
+cd "$COMPOSE_DIR"
+for table in "${TABLES[@]}"; do
+  col="$(time_column "$table")"
+  # Копия тоже ограничивается временем дампа: строка, созданная позже, в дамп попасть не могла,
+  # а если попала — значит имя дампа врёт, и сверка на этом и должна споткнуться.
+  restored_count="$(docker exec "$container" psql -U taskano_owner -d taskano -t -A -c \
+    "select count(*) from ${table} where ${col} <= '${dump_time}'" 2>/dev/null || true)"
+  prod_count="$(docker compose exec -T db psql -U taskano_owner -d taskano -t -A -c \
+    "select count(*) from ${table} where ${col} <= '${dump_time}'" 2>/dev/null || true)"
+  [[ "$restored_count" =~ ^[0-9]+$ && "$prod_count" =~ ^[0-9]+$ ]] || fail "не удалось посчитать строки таблицы $table"
+
+  if [[ "$restored_count" -ne "$prod_count" ]]; then
+    fail "$table: на момент дампа в бою $prod_count строк, в копии $restored_count"
+  fi
+  log "$table: на момент дампа бой=$prod_count копия=$restored_count — ок"
+done
+
+log "УСПЕХ: дамп $(basename "$latest_dump") восстанавливается корректно"
+echo "restore-check: успех ($(basename "$latest_dump"))"

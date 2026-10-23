@@ -1,0 +1,10 @@
+# Локальная база для разработки и тестов. Пароли — только для локальной машины.
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: taskano_owner
+      POSTGRES_PASSWORD: dev
+      POSTGRES_DB: taskano
+    ports: ["127.0.0.1:55432:5432"]
+    tmpfs: ["/var/lib/postgresql/data"]
